@@ -15,7 +15,7 @@ class ForwardCommandTest : FreeSpec({
         "to String" {
             checkAll(arbForwardCommand()) { command ->
                 with(command) {
-                    val expected = "ForwardCommand(message=$message, user=${user.username}, parameters=$parameters)"
+                    val expected = "ForwardCommand(message='$message', user=${user.username}, parameters=$parameters)"
                     toString() shouldBe expected
                 }
             }

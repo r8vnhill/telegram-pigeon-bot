@@ -1,17 +1,23 @@
 package cl.ravenhill.pigeon
 
 import cl.ravenhill.pigeon.commands.ForwardCommand
-import cl.ravenhill.pigeon.commands.ForwardCommand.Companion.register
+import cl.ravenhill.pigeon.commands.register
+import cl.ravenhill.pigeon.db.Admins
+import cl.ravenhill.pigeon.db.DatabaseService
+import cl.ravenhill.pigeon.db.Users
 import com.github.kotlintelegrambot.bot
 import com.github.kotlintelegrambot.dispatch
-import com.github.kotlintelegrambot.dispatcher.command
-import com.github.kotlintelegrambot.entities.ChatId
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.StdOutSqlLogger
+import org.jetbrains.exposed.sql.addLogger
+import org.jetbrains.exposed.sql.transactions.transaction
+
 
 fun main() {
-    val bot = bot {
+    bot {
         token = java.io.File(".secret").readText()
         dispatch {
-            ForwardCommand.register()   // TODO
+            ForwardCommand.register()
         }
     }.startPolling()
 }

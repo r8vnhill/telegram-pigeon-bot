@@ -7,6 +7,8 @@ val kotestVersion = extra["kotest.version"] as String
 val kotestExtensionVersion = extra["kotest.extension.version"] as String
 val kotlinxDatetimeVersion = extra["kotlinx.datetime.version"] as String
 val slf4jVersion = extra["slf4j.version"] as String
+val exposedVersion = extra["exposed.version"] as String
+val h2Version = extra["h2.version"] as String
 
 plugins {
     id("io.gitlab.arturbosch.detekt")
@@ -26,8 +28,11 @@ dependencies {
     dokkaHtmlPlugin("org.jetbrains.dokka:kotlin-as-java-plugin:$dokkaVersion")
     implementation("cl.ravenhill:strait-jakt:$jaktVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:$kotlinxDatetimeVersion")
-    implementation("org.slf4j:slf4j-simple:$slf4jVersion")
     implementation("com.github.kotlin-telegram-bot.kotlin-telegram-bot:dispatcher:6.1.0")
+    implementation("org.jetbrains.exposed", "exposed-core", exposedVersion)
+    implementation("org.jetbrains.exposed", "exposed-dao", exposedVersion)
+    implementation("org.jetbrains.exposed", "exposed-jdbc", exposedVersion)
+    implementation("com.h2database:h2:$h2Version")
     testImplementation("io.kotest:kotest-property:$kotestVersion")
     testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
     testImplementation("io.kotest:kotest-framework-datatest:$kotestVersion")
@@ -60,6 +65,9 @@ kotlin {
     sourceSets.all {
         languageSettings {
             languageVersion = "2.0"
+            compilerOptions {
+                freeCompilerArgs = listOf("-Xcontext-receivers")
+            }
         }
     }
 }
