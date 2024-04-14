@@ -1,5 +1,7 @@
 package cl.ravenhill.pigeon
 
+import cl.ravenhill.pigeon.commands.ForwardCommand
+import cl.ravenhill.pigeon.commands.ForwardCommand.Companion.register
 import com.github.kotlintelegrambot.bot
 import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.dispatcher.command
@@ -9,14 +11,7 @@ fun main() {
     val bot = bot {
         token = java.io.File(".secret").readText()
         dispatch {
-            command("forward") {
-                val result = bot.sendMessage(chatId = ChatId.fromId(message.chat.id), text = "Forwarding message...")
-                result.fold({
-                    println("[${it.chat.id}]: ${it.text}")
-                }, {
-                    println("Error")
-                })
-            }
+            ForwardCommand.register()   // TODO
         }
     }.startPolling()
 }

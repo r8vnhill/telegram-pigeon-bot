@@ -1,6 +1,6 @@
 package cl.ravenhill.pigeon.commands
 
-import cl.ravenhill.pigeon.ChatId
+import cl.ravenhill.pigeon.chat.PigeonUser
 
 
 /**
@@ -36,7 +36,7 @@ import cl.ravenhill.pigeon.ChatId
  */
 sealed interface Command {
     val name: String
-    val user: ChatId
+    val user: PigeonUser
     val parameters: List<String>
     fun execute(): CommandResult
 }

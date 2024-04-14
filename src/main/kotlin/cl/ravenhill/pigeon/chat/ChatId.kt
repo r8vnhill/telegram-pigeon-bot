@@ -1,4 +1,4 @@
-package cl.ravenhill.pigeon
+package cl.ravenhill.pigeon.chat
 
 import com.github.kotlintelegrambot.entities.ChatId as ChatId1
 
