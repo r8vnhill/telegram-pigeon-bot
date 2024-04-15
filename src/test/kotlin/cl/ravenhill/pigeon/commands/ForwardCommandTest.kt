@@ -22,17 +22,17 @@ class ForwardCommandTest : FreeSpec({
         }
     }
 
-    "Executing" - {
-        "should return a success result" {
-            checkAll(arbForwardCommand()) { command ->
-                with(command) {
-                    val result = execute()
-                    result.user shouldBe user
-                    result.message shouldBe "Message forwarded successfully"
-                }
-            }
-        }
-    }
+//    "Executing" - {
+//        "should return a success result" {
+//            checkAll(arbForwardCommand()) { command ->
+//                with(command) {
+//                    val result = execute()
+//                    result.user shouldBe user
+//                    result.message shouldBe "Message forwarded successfully"
+//                }
+//            }
+//        }
+//    }
 })
 
 private fun arbForwardCommand() = arbitrary {

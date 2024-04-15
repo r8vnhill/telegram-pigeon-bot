@@ -6,9 +6,10 @@ val jaktVersion = extra["jakt.version"] as String
 val kotestVersion = extra["kotest.version"] as String
 val kotestExtensionVersion = extra["kotest.extension.version"] as String
 val kotlinxDatetimeVersion = extra["kotlinx.datetime.version"] as String
-val slf4jVersion = extra["slf4j.version"] as String
 val exposedVersion = extra["exposed.version"] as String
 val h2Version = extra["h2.version"] as String
+val logbackVersion = extra["logback.version"] as String
+val kotlinTelegramBotVersion = extra["kotlin.telegram.bot.version"] as String
 
 plugins {
     id("io.gitlab.arturbosch.detekt")
@@ -26,17 +27,18 @@ repositories {
 
 dependencies {
     dokkaHtmlPlugin("org.jetbrains.dokka:kotlin-as-java-plugin:$dokkaVersion")
+    implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("cl.ravenhill:strait-jakt:$jaktVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:$kotlinxDatetimeVersion")
-    implementation("com.github.kotlin-telegram-bot.kotlin-telegram-bot:dispatcher:6.1.0")
+    implementation("com.github.kotlin-telegram-bot.kotlin-telegram-bot:dispatcher:$kotlinTelegramBotVersion")
+    implementation("com.h2database:h2:$h2Version")
     implementation("org.jetbrains.exposed", "exposed-core", exposedVersion)
     implementation("org.jetbrains.exposed", "exposed-dao", exposedVersion)
     implementation("org.jetbrains.exposed", "exposed-jdbc", exposedVersion)
-    implementation("com.h2database:h2:$h2Version")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:$kotlinxDatetimeVersion")
+    testImplementation("io.kotest.extensions:kotest-property-arbs:$kotestExtensionVersion")
+    testImplementation("io.kotest:kotest-framework-datatest:$kotestVersion")
     testImplementation("io.kotest:kotest-property:$kotestVersion")
     testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
-    testImplementation("io.kotest:kotest-framework-datatest:$kotestVersion")
-    testImplementation("io.kotest.extensions:kotest-property-arbs:$kotestExtensionVersion")
 }
 
 tasks.test {

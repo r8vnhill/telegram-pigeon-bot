@@ -4,8 +4,10 @@ import cl.ravenhill.pigeon.chat.ChatId
 import cl.ravenhill.pigeon.chat.PigeonUser
 import cl.ravenhill.pigeon.db.Admins
 import cl.ravenhill.pigeon.db.DatabaseService
+import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import com.github.kotlintelegrambot.dispatcher.command
+import com.github.kotlintelegrambot.entities.Message
 import org.jetbrains.exposed.sql.StdOutSqlLogger
 import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.selectAll
@@ -25,14 +27,9 @@ data class ForwardCommand(
     override val parameters: List<String>
 ) : Command {
     override val name: String = "forward"
-
-    /**
-     * Executes the ForwardCommand.
-     *
-     * @return The result of executing the ForwardCommand, which may be a success ir failure.
-     */
-    override fun execute(): CommandResult =
-        Success(user, "Message forwarded successfully")
+    override fun execute(): CommandResult {
+        TODO("Not yet implemented")
+    }
 
     override fun toString() =
         "ForwardCommand(message='$message', user=${user.username}, parameters=$parameters)"
@@ -66,8 +63,7 @@ data class ForwardCommand(
  */
 context(Dispatcher)
 fun ForwardCommand.Companion.register() = command("forward") {
-    transaction(DatabaseService.database) {
-        addLogger(StdOutSqlLogger)
+    transaction {
         if (Admins.selectAll().where { Admins.chatId eq message.chat.id }.count() == 0L) {
             bot.sendMessage(ChatId.fromId(message.chat.id), "You are not authorized to use this command.")
         } else {
