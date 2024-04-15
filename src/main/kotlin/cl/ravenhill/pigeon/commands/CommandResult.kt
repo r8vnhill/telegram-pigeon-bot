@@ -39,7 +39,7 @@ sealed interface CommandResult {
  * @property user the `User` associated with this success result.
  * @property message a success message detailing the successful execution of the command.
  */
-data class Success(override val user: PigeonUser, override val message: String) : CommandResult
+data class CommandSuccess(override val user: PigeonUser, override val message: String) : CommandResult
 
 /**
  * Represents a failure outcome of a command execution. Inherits from `CommandResult`.
@@ -47,4 +47,4 @@ data class Success(override val user: PigeonUser, override val message: String) 
  * @property user the `User` associated with this failure result.
  * @property message a failure message detailing the issue encountered during the command execution.
  */
-data class Failure(override val user: PigeonUser, override val message: String) : CommandResult
+data class CommandFailure(override val user: PigeonUser, override val message: String) : CommandResult

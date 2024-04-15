@@ -1,5 +1,7 @@
 package cl.ravenhill.pigeon.chat
 
+import cl.ravenhill.pigeon.states.IdleState
+import cl.ravenhill.pigeon.states.State
 import com.github.kotlintelegrambot.entities.User
 
 /**
@@ -24,6 +26,8 @@ import com.github.kotlintelegrambot.entities.User
  * @property id the unique identifier of the pigeon user.
  */
 data class PigeonUser(val username: String, val id: Long) {
+    var state: State = IdleState(this)
+
     /**
      * Converts a `PigeonUser` instance to a `User` object from the Telegram bot API. This method facilitates
      * the integration with Telegram's user management by providing a compatible user object.
@@ -31,4 +35,8 @@ data class PigeonUser(val username: String, val id: Long) {
      * @return a `User` object containing the ID and username from this `PigeonUser`, with the isBot field set to false.
      */
     fun toUser() = User(id, false, null.toString(), null, username, null, null, null)
+
+    companion object {
+        fun from(from: User) = PigeonUser(from.username ?: "", from.id)
+    }
 }

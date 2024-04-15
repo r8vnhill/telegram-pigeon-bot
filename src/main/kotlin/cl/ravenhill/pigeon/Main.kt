@@ -5,9 +5,9 @@ import cl.ravenhill.jakt.constraints.longs.BeEqualTo
 import cl.ravenhill.jakt.exceptions.CompositeException
 import cl.ravenhill.pigeon.chat.ChatId
 import cl.ravenhill.pigeon.chat.PigeonUser
-import cl.ravenhill.pigeon.commands.Failure
+import cl.ravenhill.pigeon.commands.CommandFailure
 import cl.ravenhill.pigeon.commands.StartCommand
-import cl.ravenhill.pigeon.commands.Success
+import cl.ravenhill.pigeon.commands.CommandSuccess
 import cl.ravenhill.pigeon.db.Admins
 import cl.ravenhill.pigeon.db.DatabaseService
 import cl.ravenhill.pigeon.db.Meta
@@ -87,15 +87,6 @@ private fun queryApiKey(): String = transaction {
 context(Bot.Builder)
 fun registerCommands() {
     dispatch {
-        command("start") {
-            val user = PigeonUser(message.from!!.username!!, message.chat.id)
-            when (val result = StartCommand(user).execute()) {
-                is Success -> bot.sendMessage(ChatId.fromId(message.chat.id), result.message)
-                is Failure -> bot.sendMessage(
-                    ChatId.fromId(message.chat.id),
-                    result.message
-                )
-            }
-        }
+        StartCommand.registerCommand()
     }
 }
