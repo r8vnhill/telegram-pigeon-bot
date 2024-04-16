@@ -2,7 +2,6 @@ package cl.ravenhill.pigeon.states
 
 import cl.ravenhill.pigeon.arbBot
 import cl.ravenhill.pigeon.arbs.arbUser
-import com.github.kotlintelegrambot.bot
 import com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemOut
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
