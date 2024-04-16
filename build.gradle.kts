@@ -10,6 +10,7 @@ val exposedVersion = extra["exposed.version"] as String
 val h2Version = extra["h2.version"] as String
 val logbackVersion = extra["logback.version"] as String
 val kotlinTelegramBotVersion = extra["kotlin.telegram.bot.version"] as String
+val systemLambdaVersion = extra["system-lambda.version"] as String
 
 plugins {
     id("io.gitlab.arturbosch.detekt")
@@ -39,6 +40,7 @@ dependencies {
     testImplementation("io.kotest:kotest-framework-datatest:$kotestVersion")
     testImplementation("io.kotest:kotest-property:$kotestVersion")
     testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
+    testImplementation("com.github.stefanbirkner:system-lambda:$systemLambdaVersion")
 }
 
 tasks.test {

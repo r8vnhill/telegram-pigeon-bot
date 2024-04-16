@@ -6,96 +6,60 @@ import cl.ravenhill.pigeon.db.Users
 import cl.ravenhill.pigeon.states.IdleState
 import cl.ravenhill.pigeon.states.StartState
 import cl.ravenhill.pigeon.states.State
-import com.github.kotlintelegrambot.Bot
-import com.github.kotlintelegrambot.entities.User
 import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
+import com.github.kotlintelegrambot.entities.User as TelegramUser
 
 /**
- * Represents a user in the Pigeon Telegram bot system. This data class encapsulates essential user information,
- * such as the username and user ID. It provides functionality to convert this into a Telegram bot API `User` object,
- * and to interact with the system's state management and database interactions.
+ * Represents a user in the Pigeon Telegram bot system. This data class encapsulates critical user information,
+ * including the username and user ID. It supports converting this data into a Telegram bot API `User` object,
+ * and handles interactions with the system's state management and database. The class conforms to the `ReadWriteUser`
+ * interface, allowing dynamic state management based on user interactions.
  *
  * ## Usage:
- * This class is used to manage user information within the bot, convert user data between different representations,
- * and to facilitate user state management.
+ * Utilize this class to manage user data within the bot, seamlessly converting user data between the Telegram bot
+ * representation and the system's internal format, and handling state transitions as users interact with the bot.
  *
- * ### Example 1: Creating a PigeonUser instance
+ * ### Example: Creating and managing a PigeonUser
  * ```kotlin
- * val pigeonUser = PigeonUser("exampleUser", 1234567890L)
- * ```
- * ### Example 2: Converting a PigeonUser to a Telegram User
- * ```kotlin
- * val telegramUser = pigeonUser.toUser()
- * println(telegramUser)
- * ```
- * ### Example 3: Handling user state transition on bot start
- * ```kotlin
- * pigeonUser.onStart(bot)
+ * val pigeonUser = PigeonUser("john_doe", 12345L)
+ * println(pigeonUser)
+ * pigeonUser.state = StartState(pigeonUser)
+ * println("User is in state: ${pigeonUser.state}")
  * ```
  *
- * @property username The username of the pigeon user.
- * @property userId The unique identifier of the pigeon user.
- * @property state The current state of the pigeon user, managed by state pattern.
+ * @property username The username of the Pigeon user, used as a unique identifier within the Telegram system.
+ * @property userId The unique identifier of the Pigeon user, typically linked with their Telegram account ID.
+ * @property state The current state of the Pigeon user, dynamically managed and updated during the user's session.
  */
-data class PigeonUser(val username: String, val userId: Long) {
-    var state: State = IdleState(this)
-
-    /**
-     * Converts this `PigeonUser` instance to a `User` object from the Telegram bot API. This method facilitates
-     * integration with Telegram's user management by providing a compatible user object, setting the `isBot` field to false.
-     *
-     * @return A `User` object containing the ID and username from this `PigeonUser`.
-     */
-    fun toUser() = User(userId, false, null.toString(), null, username, null, null, null)
-
-    /**
-     * Handles the initial start action for a user, which can include setting initial state and database operations.
-     * This should be called when the bot starts interaction with a user.
-     *
-     * @param bot The active bot instance to interact with.
-     */
-    fun onStart(bot: Bot) {
-        transaction {
-            // Temporarily creating the user in the database
-            Users.insert {
-                it[id] = this@PigeonUser.userId
-                it[username] = this@PigeonUser.username
-                it[state] = StartState::class.simpleName!!
-            }
-        }
-        state.onStart(bot)
-    }
+data class PigeonUser(
+    override val username: String,
+    override val userId: Long
+) : ReadWriteUser {
+    override var state: State = IdleState(this)
 
     override fun toString() = "PigeonUser(username='$username', userId=$userId, state=$state)"
-
-    /**
-     * Transitions the user to an idle state and updates the corresponding database record.
-     */
-    fun onIdle() {
-        transaction {
-            Users.update({ Users.id eq userId }) {
-                it[state] = IdleState::class.simpleName!!
-            }
-        }
-    }
 
     companion object {
         /**
          * Factory method to create a `PigeonUser` from a Telegram API `User`.
          *
-         * @param from The Telegram user object.
-         * @return A new instance of `PigeonUser`.
+         * This method allows easy conversion from a Telegram user object to a `PigeonUser`,
+         * facilitating the integration of Telegram data with internal systems.
+         *
+         * @param from The Telegram user object to convert.
+         * @return A new instance of `PigeonUser` initialized with data from the Telegram user.
          */
-        fun from(from: User) = PigeonUser(from.username ?: "", from.id)
+        fun from(from: TelegramUser) = PigeonUser(from.username ?: "unknown", from.id)
 
         /**
-         * Factory method to create a `PigeonUser` from a database row.
+         * Factory method to create a `PigeonUser` from a database row. This method ensures that all necessary data
+         * is present in the row before attempting to create a user object, thereby avoiding partial or invalid data
+         * setups.
          *
          * @param row The database row containing user data.
          * @return A new instance of `PigeonUser` configured with data from the database row.
+         * @throws IllegalArgumentException if essential data fields are missing in the row.
          */
         fun from(row: ResultRow) = transaction {
             constraints {

@@ -1,8 +1,6 @@
 package cl.ravenhill.pigeon.commands
 
 import cl.ravenhill.pigeon.chat.PigeonUser
-import com.github.kotlintelegrambot.Bot
-import com.github.kotlintelegrambot.entities.Message
 
 
 /**

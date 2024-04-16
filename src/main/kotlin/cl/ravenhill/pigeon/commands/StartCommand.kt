@@ -11,16 +11,43 @@ import org.slf4j.LoggerFactory
 import java.io.File
 
 
+/**
+ * Represents the "start" command in the Telegram pigeon bot system, initiated by a user.
+ * This command checks if the user is new or returning and sends the appropriate welcome message.
+ * It also logs the activity and handles user registration or acknowledgment based on their existence in the database.
+ *
+ * ## Usage:
+ * This command is typically bound to the initial interaction of a user with the bot, often triggered by
+ * sending "/start" in the chat. It can also be used to reinitialize user data or provide information to new users.
+ *
+ * ### Example: Executing the start command
+ * ```kotlin
+ * val command = StartCommand(pigeonUser, bot)
+ * val result = command.execute()
+ * println(result)
+ * ```
+ *
+ * @property user The `PigeonUser` who initiated the command.
+ * @property bot The instance of `Bot` handling the Telegram interactions.
+ */
 data class StartCommand(
     override val user: PigeonUser,
     val bot: Bot
 ) : Command {
-    private val logger = LoggerFactory.getLogger(javaClass)
-    override val name: String = "start"
-    override val parameters: List<String> = listOf()
+    private val logger = LoggerFactory.getLogger(javaClass)  // Logger for tracking command execution.
 
+    override val name: String = "start"  // Command name.
+    override val parameters: List<String> = listOf()  // Parameters received by the command.
+
+    /**
+     * Executes the "start" command functionality. This method determines whether the user is new or returning
+     * and sends an appropriate message. It logs the user's action and manages their state in the database.
+     *
+     * @return `CommandResult` indicating the outcome of the command execution. This could be a success with
+     * a welcome message or a failure if the welcome message file is missing.
+     */
     override fun execute(): CommandResult {
-        logger.info("User ${user.username.ifBlank { user.userId }} started the bot")
+        logger.info("User ${user.username.ifBlank { user.userId.toString() }} started the bot")
         val result = transaction {
             if (Users.selectAll().where { Users.id eq user.userId }.count() == 0L) {
                 val welcomeFile = File("messages/welcome_message.md")

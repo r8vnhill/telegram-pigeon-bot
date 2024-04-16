@@ -2,6 +2,7 @@ package cl.ravenhill.pigeon.states
 
 import cl.ravenhill.pigeon.chat.ChatId
 import cl.ravenhill.pigeon.chat.PigeonUser
+import cl.ravenhill.pigeon.chat.ReadWriteUser
 import cl.ravenhill.pigeon.db.Users
 import com.github.kotlintelegrambot.Bot
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -9,8 +10,12 @@ import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 
-class StartState(context: PigeonUser) : State(context) {
+data class StartState(override val context: ReadWriteUser) : State() {
     private val logger = LoggerFactory.getLogger(javaClass)
+
+    init {
+        context.state = this
+    }
 
     override fun process(text: String?, bot: Bot) {
         super.process(text, bot)
@@ -18,7 +23,7 @@ class StartState(context: PigeonUser) : State(context) {
             "YES" -> transaction {
                 logger.info("User ${context.username.ifBlank { context.userId }} confirmed start")
                 bot.sendMessage(ChatId.fromId(context.userId), "You were successfully registered!")
-                context.onIdle()
+                context.onIdle(bot)
             }
 
             "NO" -> transaction {

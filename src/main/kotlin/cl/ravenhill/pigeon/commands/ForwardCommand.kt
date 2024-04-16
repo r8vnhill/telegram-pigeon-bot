@@ -3,13 +3,8 @@ package cl.ravenhill.pigeon.commands
 import cl.ravenhill.pigeon.chat.ChatId
 import cl.ravenhill.pigeon.chat.PigeonUser
 import cl.ravenhill.pigeon.db.Admins
-import cl.ravenhill.pigeon.db.DatabaseService
-import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import com.github.kotlintelegrambot.dispatcher.command
-import com.github.kotlintelegrambot.entities.Message
-import org.jetbrains.exposed.sql.StdOutSqlLogger
-import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 
