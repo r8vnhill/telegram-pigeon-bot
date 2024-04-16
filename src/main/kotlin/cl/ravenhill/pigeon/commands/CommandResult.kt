@@ -1,6 +1,7 @@
 package cl.ravenhill.pigeon.commands
 
 import cl.ravenhill.pigeon.chat.PigeonUser
+import cl.ravenhill.pigeon.chat.ReadUser
 
 /**
  * Defines a contract for the result of a command within the Telegram pigeon bot. This sealed interface
@@ -29,7 +30,7 @@ import cl.ravenhill.pigeon.chat.PigeonUser
  * @property message a descriptive message about the outcome of the command.
  */
 sealed interface CommandResult {
-    val user: PigeonUser
+    val user: ReadUser
     val message: String
 }
 
@@ -39,7 +40,7 @@ sealed interface CommandResult {
  * @property user the `User` associated with this success result.
  * @property message a success message detailing the successful execution of the command.
  */
-data class CommandSuccess(override val user: PigeonUser, override val message: String) : CommandResult
+data class CommandSuccess(override val user: ReadUser, override val message: String) : CommandResult
 
 /**
  * Represents a failure outcome of a command execution. Inherits from `CommandResult`.
@@ -47,4 +48,4 @@ data class CommandSuccess(override val user: PigeonUser, override val message: S
  * @property user the `User` associated with this failure result.
  * @property message a failure message detailing the issue encountered during the command execution.
  */
-data class CommandFailure(override val user: PigeonUser, override val message: String) : CommandResult
+data class CommandFailure(override val user: ReadUser, override val message: String) : CommandResult

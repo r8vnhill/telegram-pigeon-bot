@@ -1,6 +1,7 @@
 package cl.ravenhill.pigeon.commands
 
-import cl.ravenhill.pigeon.chat.PigeonUser
+import cl.ravenhill.pigeon.chat.ReadUser
+import com.github.kotlintelegrambot.Bot
 
 
 /**
@@ -36,7 +37,8 @@ import cl.ravenhill.pigeon.chat.PigeonUser
  */
 sealed interface Command {
     val name: String
-    val user: PigeonUser
+    val user: ReadUser
     val parameters: List<String>
+    val bot: Bot
     fun execute(): CommandResult
 }

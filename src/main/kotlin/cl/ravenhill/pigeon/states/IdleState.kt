@@ -1,8 +1,13 @@
 package cl.ravenhill.pigeon.states
 
+import cl.ravenhill.pigeon.BotResult
 import cl.ravenhill.pigeon.chat.PigeonUser
 import cl.ravenhill.pigeon.chat.ReadWriteUser
+import cl.ravenhill.pigeon.db.Users
 import com.github.kotlintelegrambot.Bot
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.transactions.transaction
 
 
 /**
@@ -45,5 +50,10 @@ data class IdleState(override val context: ReadWriteUser) : State {
     override fun onStart(bot: Bot): TransitionResult {
         context.state = StartState(context)  // Transition the user to the StartState
         return TransitionSuccess  // Return success upon a successful state transition
+    }
+
+    override fun onRevoke(bot: Bot): TransitionResult {
+        context.state = RevokeState(context)
+        return TransitionSuccess
     }
 }

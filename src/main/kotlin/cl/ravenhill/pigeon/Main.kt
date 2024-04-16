@@ -3,15 +3,21 @@ package cl.ravenhill.pigeon
 import cl.ravenhill.jakt.Jakt.constraints
 import cl.ravenhill.jakt.constraints.longs.BeEqualTo
 import cl.ravenhill.jakt.exceptions.CompositeException
+import cl.ravenhill.pigeon.callbacks.RevokeConfirmationNo
+import cl.ravenhill.pigeon.callbacks.RevokeConfirmationYes
+import cl.ravenhill.pigeon.callbacks.StartConfirmationNo
 import cl.ravenhill.pigeon.chat.PigeonUser
+import cl.ravenhill.pigeon.commands.RevokeCommand
 import cl.ravenhill.pigeon.commands.StartCommand
 import cl.ravenhill.pigeon.db.Admins
 import cl.ravenhill.pigeon.db.DatabaseService
 import cl.ravenhill.pigeon.db.Meta
 import cl.ravenhill.pigeon.db.Users
+import cl.ravenhill.pigeon.callbacks.StartConfirmationYes
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.bot
 import com.github.kotlintelegrambot.dispatch
+import com.github.kotlintelegrambot.dispatcher.callbackQuery
 import com.github.kotlintelegrambot.dispatcher.text
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.selectAll
@@ -84,17 +90,42 @@ private fun queryApiKey(): String = transaction {
 context(Bot.Builder)
 fun registerCommands() {
     dispatch {
+        callbackQuery(StartConfirmationYes.name) {
+            val user = PigeonUser.from(callbackQuery.from)
+            StartConfirmationYes(user, bot)
+        }
+
+        callbackQuery(StartConfirmationNo.name) {
+            val user = PigeonUser.from(callbackQuery.from)
+            StartConfirmationNo(user, bot)
+        }
+
+        callbackQuery(RevokeConfirmationYes.name) {
+            val user = transaction {
+                PigeonUser.from(Users.selectAll().where { Users.id eq callbackQuery.from.id }.single())
+            }
+            RevokeConfirmationYes(user, bot)
+        }
+
+        callbackQuery(RevokeConfirmationNo.name) {
+            val user = transaction {
+                PigeonUser.from(Users.selectAll().where { Users.id eq callbackQuery.from.id }.single())
+            }
+            RevokeConfirmationNo(user, bot)
+        }
+
         text {
             when (message.text) {
                 "/start" -> StartCommand(user = PigeonUser.from(message.from!!), bot = bot).execute()
+                "/revoke" -> RevokeCommand(user = PigeonUser.from(message.from!!), bot = bot).execute()
                 else -> transaction {
-                    val queryResult = Users.selectAll().where { Users.id eq message.chat.id }
-                    if (queryResult.count() > 0) {
-                        val user = PigeonUser.from(queryResult.single())
-                        user.state.process(message.text, bot)
-                    } else {
-                        logger.info("User not found in database")
-                    }
+//                    val queryResult = Users.selectAll().where { Users.id eq message.chat.id }
+//                    if (queryResult.count() > 0) {
+//                        val user = PigeonUser.from(queryResult.single())
+//                        user.state.process(message.text, bot)
+//                    } else {
+//                        logger.info("User not found in database")
+//                    }
                 }
             }
         }

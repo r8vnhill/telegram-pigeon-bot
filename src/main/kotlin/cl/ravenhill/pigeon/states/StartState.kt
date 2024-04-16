@@ -1,15 +1,12 @@
 package cl.ravenhill.pigeon.states
 
-import cl.ravenhill.pigeon.BotFailure
 import cl.ravenhill.pigeon.BotResult
-import cl.ravenhill.pigeon.BotSuccess
-import cl.ravenhill.pigeon.chat.ChatId
 import cl.ravenhill.pigeon.chat.ReadWriteUser
 import cl.ravenhill.pigeon.db.Users
+import cl.ravenhill.pigeon.sendMessage
 import com.github.kotlintelegrambot.Bot
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 
@@ -49,64 +46,31 @@ data class StartState(override val context: ReadWriteUser) : State {
      * necessary messages sent to the user.
      */
     override fun process(text: String?, bot: Bot): BotResult {
-        super.process(text, bot) // This should be adjusted if super.process has meaningful behavior.
+        super.process(text, bot)
         val cleanText = text?.uppercase() ?: "INVALID"
         return when (cleanText) {
             "YES" -> handleConfirmation(bot)
             "NO" -> handleRejection(bot)
-            else -> handleInvalidInput(bot)
+            else -> handleInvalidInput(bot, context)
         }
     }
 
     private fun handleConfirmation(bot: Bot): BotResult = transaction {
         logger.info("User ${context.username.ifBlank { context.userId.toString() }} confirmed start")
         val message = "You were successfully registered!"
-        sendMessage(bot, message).also {
+        sendMessage(bot, message, context).also {
             context.onIdle(bot)
-            verifyUserState(it, IdleState::class.simpleName!!)
+            verifyUserState(it, IdleState::class.simpleName!!, context)
         }
     }
 
     private fun handleRejection(bot: Bot): BotResult = transaction {
         logger.info("User ${context.username.ifBlank { context.userId.toString() }} denied start")
         val message = "You were not registered."
-        sendMessage(bot, message).also {
+        sendMessage(bot, message, context).also {
             Users.deleteWhere { id eq context.userId }
             context.onIdle(bot)
-            verifyUserDeletion(it)
+            verifyUserDeletion(it, context)
         }
-    }
-
-    private fun handleInvalidInput(bot: Bot): BotResult = transaction {
-        logger.warn("Invalid input from user ${context.username.ifBlank { context.userId.toString() }}")
-        val message = "Invalid input. Please type 'yes' or 'no' to confirm or deny registration."
-        sendMessage(bot, message)
-    }
-
-    private fun sendMessage(bot: Bot, message: String): BotResult =
-        bot.sendMessage(ChatId.fromId(context.userId), message).fold(
-            ifSuccess = {
-                BotSuccess("Message sent to user ${context.username.ifBlank { context.userId.toString() }}: $message")
-            },
-            ifError = {
-                BotFailure("Failed to send message to user ${context.username.ifBlank { context.userId.toString() }}")
-            }
-        )
-
-    private fun verifyUserState(result: BotResult, expectedState: String): BotResult {
-        if (result is BotSuccess) {
-            val isCorrectState = Users.selectAll().where { Users.id eq context.userId }
-                .single()[Users.state] == expectedState
-            if (!isCorrectState) return BotFailure("User state was not updated")
-        }
-        return result
-    }
-
-    private fun verifyUserDeletion(result: BotResult): BotResult {
-        if (result is BotSuccess) {
-            val exists = Users.selectAll().where { Users.id eq context.userId }.count() > 0
-            if (exists) return BotFailure("User was not deleted")
-        }
-        return result
     }
 }

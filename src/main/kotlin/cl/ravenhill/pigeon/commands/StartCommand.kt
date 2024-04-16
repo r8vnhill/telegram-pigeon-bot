@@ -1,10 +1,15 @@
 package cl.ravenhill.pigeon.commands
 
-import cl.ravenhill.pigeon.chat.PigeonUser
+import cl.ravenhill.pigeon.chat.ReadUser
 import cl.ravenhill.pigeon.db.Users
+import cl.ravenhill.pigeon.callbacks.StartConfirmationNo
+import cl.ravenhill.pigeon.callbacks.StartConfirmationYes
+import cl.ravenhill.pigeon.states.IdleState
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.entities.ChatId
+import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
 import com.github.kotlintelegrambot.entities.ParseMode
+import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
@@ -31,8 +36,8 @@ import java.io.File
  * @property bot The instance of `Bot` handling the Telegram interactions.
  */
 data class StartCommand(
-    override val user: PigeonUser,
-    val bot: Bot
+    override val user: ReadUser,
+    override val bot: Bot
 ) : Command {
     private val logger = LoggerFactory.getLogger(javaClass)  // Logger for tracking command execution.
 
@@ -51,10 +56,8 @@ data class StartCommand(
         val result = transaction {
             if (Users.selectAll().where { Users.id eq user.userId }.count() == 0L) {
                 val welcomeFile = File("messages/welcome_message.md")
-                if (welcomeFile.exists()) {
-                    bot.sendMessage(ChatId.fromId(user.userId), welcomeFile.readText(), parseMode = ParseMode.MARKDOWN)
-                    user.onStart(bot)
-                    CommandSuccess(user, "User does not exist in the database, welcome message sent")
+                if (welcomeFile.exists() && user.state is IdleState) {
+                    sendWelcomeMessage(welcomeFile)
                 } else {
                     CommandFailure(user, "Welcome message not found")
                 }
@@ -66,4 +69,25 @@ data class StartCommand(
         logger.info("Start command result: $result")
         return result
     }
+
+    private fun sendWelcomeMessage(welcomeFile: File): CommandSuccess {
+        val inlineKeyboardMarkup = inlineKeyboardMarkup()
+        bot.sendMessage(
+            ChatId.fromId(user.userId),
+            welcomeFile.readText(),
+            parseMode = ParseMode.MARKDOWN,
+            replyMarkup = inlineKeyboardMarkup
+        )
+        user.onStart(bot)
+        return CommandSuccess(user, "User does not exist in the database, welcome message sent")
+    }
+
+    private fun inlineKeyboardMarkup() = InlineKeyboardMarkup.create(
+        listOf(
+            listOf(
+                InlineKeyboardButton.CallbackData("Yes", StartConfirmationYes.name),
+                InlineKeyboardButton.CallbackData("No", StartConfirmationNo.name)
+            )
+        )
+    )
 }

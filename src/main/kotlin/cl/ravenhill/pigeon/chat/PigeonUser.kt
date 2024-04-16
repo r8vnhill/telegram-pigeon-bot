@@ -4,6 +4,7 @@ import cl.ravenhill.jakt.Jakt.constraints
 import cl.ravenhill.pigeon.BeNull
 import cl.ravenhill.pigeon.db.Users
 import cl.ravenhill.pigeon.states.IdleState
+import cl.ravenhill.pigeon.states.RevokeState
 import cl.ravenhill.pigeon.states.StartState
 import cl.ravenhill.pigeon.states.State
 import org.jetbrains.exposed.sql.ResultRow
@@ -77,6 +78,7 @@ data class PigeonUser(
             user.state = when (row[Users.state]) {
                 IdleState::class.simpleName -> IdleState(user)
                 StartState::class.simpleName -> StartState(user)
+                RevokeState::class.simpleName -> RevokeState(user)
                 else -> throw IllegalArgumentException("Unknown state")
             }
             user

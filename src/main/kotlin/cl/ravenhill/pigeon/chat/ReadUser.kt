@@ -2,6 +2,7 @@ package cl.ravenhill.pigeon.chat
 
 import cl.ravenhill.pigeon.db.Users
 import cl.ravenhill.pigeon.states.IdleState
+import cl.ravenhill.pigeon.states.RevokeState
 import cl.ravenhill.pigeon.states.StartState
 import cl.ravenhill.pigeon.states.State
 import cl.ravenhill.pigeon.states.TransitionResult
@@ -52,16 +53,7 @@ interface ReadUser {
      * @return
      *  `TransitionResult` - The result of the start action, indicating success or failure of the state transition.
      */
-    fun onStart(bot: Bot): TransitionResult {
-        transaction {
-            Users.insert {
-                it[id] = userId
-                it[username] = this@ReadUser.username
-                it[state] = StartState::class.simpleName!!
-            }
-        }
-        return state.onStart(bot)
-    }
+    fun onStart(bot: Bot): TransitionResult = state.onStart(bot)
 
     /**
      * Manages the transition of this user to an idle state. This method is called when the user's interaction is
@@ -79,5 +71,14 @@ interface ReadUser {
             }
         }
         return state.onIdle(bot)
+    }
+
+    fun onRevoke(bot: Bot): TransitionResult {
+        transaction {
+            Users.update({ Users.id eq userId }) {
+                it[state] = RevokeState::class.simpleName!!
+            }
+        }
+        return state.onRevoke(bot)
     }
 }
