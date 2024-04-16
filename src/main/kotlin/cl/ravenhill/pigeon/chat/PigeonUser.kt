@@ -15,11 +15,12 @@ import org.jetbrains.exposed.sql.update
 
 /**
  * Represents a user in the Pigeon Telegram bot system. This data class encapsulates essential user information,
- * specifically the username and user ID, and provides functionality to convert this into a Telegram bot API `User` object.
+ * such as the username and user ID. It provides functionality to convert this into a Telegram bot API `User` object,
+ * and to interact with the system's state management and database interactions.
  *
  * ## Usage:
- * This class is primarily used to manage user information within the bot and to interact with the Telegram bot API,
- * where conversion of internal user representation to the API's user model is necessary.
+ * This class is used to manage user information within the bot, convert user data between different representations,
+ * and to facilitate user state management.
  *
  * ### Example 1: Creating a PigeonUser instance
  * ```kotlin
@@ -30,23 +31,35 @@ import org.jetbrains.exposed.sql.update
  * val telegramUser = pigeonUser.toUser()
  * println(telegramUser)
  * ```
+ * ### Example 3: Handling user state transition on bot start
+ * ```kotlin
+ * pigeonUser.onStart(bot)
+ * ```
  *
- * @property username the username of the pigeon user.
- * @property userId the unique identifier of the pigeon user.
+ * @property username The username of the pigeon user.
+ * @property userId The unique identifier of the pigeon user.
+ * @property state The current state of the pigeon user, managed by state pattern.
  */
 data class PigeonUser(val username: String, val userId: Long) {
     var state: State = IdleState(this)
 
     /**
-     * Converts a `PigeonUser` instance to a `User` object from the Telegram bot API. This method facilitates
-     * the integration with Telegram's user management by providing a compatible user object.
+     * Converts this `PigeonUser` instance to a `User` object from the Telegram bot API. This method facilitates
+     * integration with Telegram's user management by providing a compatible user object, setting the `isBot` field to false.
      *
-     * @return a `User` object containing the ID and username from this `PigeonUser`, with the isBot field set to false.
+     * @return A `User` object containing the ID and username from this `PigeonUser`.
      */
     fun toUser() = User(userId, false, null.toString(), null, username, null, null, null)
 
+    /**
+     * Handles the initial start action for a user, which can include setting initial state and database operations.
+     * This should be called when the bot starts interaction with a user.
+     *
+     * @param bot The active bot instance to interact with.
+     */
     fun onStart(bot: Bot) {
         transaction {
+            // Temporarily creating the user in the database
             Users.insert {
                 it[id] = this@PigeonUser.userId
                 it[username] = this@PigeonUser.username
@@ -58,6 +71,9 @@ data class PigeonUser(val username: String, val userId: Long) {
 
     override fun toString() = "PigeonUser(username='$username', userId=$userId, state=$state)"
 
+    /**
+     * Transitions the user to an idle state and updates the corresponding database record.
+     */
     fun onIdle() {
         transaction {
             Users.update({ Users.id eq userId }) {
@@ -67,7 +83,20 @@ data class PigeonUser(val username: String, val userId: Long) {
     }
 
     companion object {
+        /**
+         * Factory method to create a `PigeonUser` from a Telegram API `User`.
+         *
+         * @param from The Telegram user object.
+         * @return A new instance of `PigeonUser`.
+         */
         fun from(from: User) = PigeonUser(from.username ?: "", from.id)
+
+        /**
+         * Factory method to create a `PigeonUser` from a database row.
+         *
+         * @param row The database row containing user data.
+         * @return A new instance of `PigeonUser` configured with data from the database row.
+         */
         fun from(row: ResultRow) = transaction {
             constraints {
                 "User must have an ID" {
