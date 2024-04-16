@@ -3,11 +3,8 @@ package cl.ravenhill.pigeon
 import cl.ravenhill.jakt.Jakt.constraints
 import cl.ravenhill.jakt.constraints.longs.BeEqualTo
 import cl.ravenhill.jakt.exceptions.CompositeException
-import cl.ravenhill.pigeon.chat.ChatId
 import cl.ravenhill.pigeon.chat.PigeonUser
-import cl.ravenhill.pigeon.commands.CommandFailure
 import cl.ravenhill.pigeon.commands.StartCommand
-import cl.ravenhill.pigeon.commands.CommandSuccess
 import cl.ravenhill.pigeon.db.Admins
 import cl.ravenhill.pigeon.db.DatabaseService
 import cl.ravenhill.pigeon.db.Meta
@@ -15,7 +12,7 @@ import cl.ravenhill.pigeon.db.Users
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.bot
 import com.github.kotlintelegrambot.dispatch
-import com.github.kotlintelegrambot.dispatcher.command
+import com.github.kotlintelegrambot.dispatcher.text
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -87,6 +84,19 @@ private fun queryApiKey(): String = transaction {
 context(Bot.Builder)
 fun registerCommands() {
     dispatch {
-        StartCommand.registerCommand()
+        text {
+            when (message.text) {
+                "/start" -> StartCommand(user = PigeonUser.from(message.from!!), bot = bot).execute()
+                else -> transaction {
+                    val queryResult = Users.selectAll().where { Users.id eq message.chat.id }
+                    if (queryResult.count() > 0) {
+                        val user = PigeonUser.from(queryResult.single())
+                        user.state.process(message.text, bot)
+                    } else {
+                        logger.info("User not found in database")
+                    }
+                }
+            }
+        }
     }
 }

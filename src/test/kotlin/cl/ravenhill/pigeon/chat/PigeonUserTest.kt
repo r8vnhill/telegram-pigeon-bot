@@ -11,7 +11,7 @@ class PigeonUserTest : FreeSpec({
     "Transforming" - {
         "to a Telegram User" {
             checkAll(Arb.long(), Arb.usernames()) { id, username ->
-                val user = PigeonUser(username = username.value, id = id)
+                val user = PigeonUser(username = username.value, userId = id)
                 val telegramUser = user.toUser()
                 telegramUser.id shouldBe id
                 telegramUser.isBot shouldBe false

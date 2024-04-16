@@ -47,6 +47,7 @@ object Users : IdTable<Long>() {
     // Column definitions
     val username = varchar("username", 50)
     val chatId = long("chat_id")
+    val state = varchar("state", 50)
 
     // Custom primary key definition
     override val id: Column<EntityID<Long>> = chatId.entityId()

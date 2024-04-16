@@ -12,5 +12,5 @@ import io.kotest.property.arbs.usernames
  * and reliability of the system under test.
  */
 fun arbUser() = arbitrary {
-    PigeonUser(username = Arb.usernames().bind().value, id = Arb.long().bind())
+    PigeonUser(username = Arb.usernames().bind().value, userId = Arb.long().bind())
 }
