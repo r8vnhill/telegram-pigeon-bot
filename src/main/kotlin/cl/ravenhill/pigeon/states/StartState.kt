@@ -10,7 +10,7 @@ import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 
-data class StartState(override val context: ReadWriteUser) : State() {
+data class StartState(override val context: ReadWriteUser) : State {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     init {

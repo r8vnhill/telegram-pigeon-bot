@@ -28,7 +28,7 @@ import com.github.kotlintelegrambot.Bot
  *  context The `ReadWriteUser` instance representing the user associated with this state, which provides the necessary
  *  context for state transitions.
  */
-data class IdleState(override val context: ReadWriteUser) : State() {
+data class IdleState(override val context: ReadWriteUser) : State {
 
     init {
         context.state = this  // Sets the user's state to IdleState upon initialization
