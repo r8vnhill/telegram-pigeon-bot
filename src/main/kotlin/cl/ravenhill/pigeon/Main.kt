@@ -6,6 +6,7 @@ import cl.ravenhill.jakt.exceptions.CompositeException
 import cl.ravenhill.pigeon.callbacks.RevokeConfirmationNo
 import cl.ravenhill.pigeon.callbacks.RevokeConfirmationYes
 import cl.ravenhill.pigeon.callbacks.StartConfirmationNo
+import cl.ravenhill.pigeon.callbacks.StartConfirmationYes
 import cl.ravenhill.pigeon.chat.PigeonUser
 import cl.ravenhill.pigeon.commands.RevokeCommand
 import cl.ravenhill.pigeon.commands.StartCommand
@@ -13,12 +14,11 @@ import cl.ravenhill.pigeon.db.Admins
 import cl.ravenhill.pigeon.db.DatabaseService
 import cl.ravenhill.pigeon.db.Meta
 import cl.ravenhill.pigeon.db.Users
-import cl.ravenhill.pigeon.callbacks.StartConfirmationYes
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.bot
 import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.dispatcher.callbackQuery
-import com.github.kotlintelegrambot.dispatcher.text
+import com.github.kotlintelegrambot.dispatcher.command
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -28,6 +28,8 @@ import kotlin.time.measureTime
 import kotlin.time.measureTimedValue
 
 private val logger = LoggerFactory.getLogger("Main")
+private const val JDBC_URL = "jdbc:h2:file:./build/pigeon"
+private const val JDBC_DRIVER = "org.h2.Driver"
 
 @OptIn(ExperimentalTime::class)
 fun main() {
@@ -62,7 +64,7 @@ fun main() {
 private fun initDatabase() {
     logger.info("Initializing database")
     measureTime {
-        DatabaseService.init() // Initializes connection or a set of tables
+        DatabaseService(JDBC_URL, JDBC_DRIVER).init()
         transaction { SchemaUtils.create(Meta, Users, Admins) } // Creates tables in the database
     }.also { timeTaken ->
         logger.info("Database initialized in $timeTaken")
@@ -114,20 +116,16 @@ fun registerCommands() {
             RevokeConfirmationNo(user, bot)
         }
 
-        text {
-            when (message.text) {
-                "/start" -> StartCommand(user = PigeonUser.from(message.from!!), bot = bot).execute()
-                "/revoke" -> RevokeCommand(user = PigeonUser.from(message.from!!), bot = bot).execute()
-                else -> transaction {
-//                    val queryResult = Users.selectAll().where { Users.id eq message.chat.id }
-//                    if (queryResult.count() > 0) {
-//                        val user = PigeonUser.from(queryResult.single())
-//                        user.state.process(message.text, bot)
-//                    } else {
-//                        logger.info("User not found in database")
-//                    }
-                }
-            }
+        command("start") {
+            StartCommand(user = PigeonUser.from(message.from!!), bot = bot).execute()
+        }
+
+        command("revoke") {
+            RevokeCommand(user = PigeonUser.from(message.from!!), bot = bot).execute()
+        }
+
+        command("addChat") {
+//            AddChatCommand(user = PigeonUser.from(message.from!!), bot = bot).execute()
         }
     }
 }

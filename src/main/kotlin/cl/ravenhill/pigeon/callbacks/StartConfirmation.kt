@@ -8,7 +8,6 @@ import com.github.kotlintelegrambot.Bot
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.slf4j.LoggerFactory
 
 /**
  * Defines a contract for handling start confirmation responses in the Telegram bot system. This sealed interface

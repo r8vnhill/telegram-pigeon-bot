@@ -45,11 +45,11 @@ import org.jetbrains.exposed.sql.Column
  */
 object Users : IdTable<Long>() {
     // Column definitions
-    val username = varchar("username", 50)
     val chatId = long("chat_id")
+    val username = varchar("username", 50)
     val state = varchar("state", 50)
 
     // Custom primary key definition
     override val id: Column<EntityID<Long>> = chatId.entityId()
-    override val primaryKey = PrimaryKey(chatId, name = "PK_ChatId") // Explicitly naming the primary key for clarity
+    override val primaryKey = PrimaryKey(id, name = "PK_ChatId") // Explicitly naming the primary key for clarity
 }

@@ -9,6 +9,7 @@ import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
 import com.github.kotlintelegrambot.entities.ParseMode
+import com.github.kotlintelegrambot.entities.ReplyMarkup
 import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -82,12 +83,10 @@ data class StartCommand(
         return CommandSuccess(user, "User does not exist in the database, welcome message sent")
     }
 
-    private fun inlineKeyboardMarkup() = InlineKeyboardMarkup.create(
-        listOf(
-            listOf(
-                InlineKeyboardButton.CallbackData("Yes", StartConfirmationYes.name),
-                InlineKeyboardButton.CallbackData("No", StartConfirmationNo.name)
-            )
-        )
-    )
+    private fun inlineKeyboardMarkup(): ReplyMarkup? {
+        val yesButton = InlineKeyboardButton.CallbackData("Yes", StartConfirmationYes.name)
+        val noButton = InlineKeyboardButton.CallbackData("No", StartConfirmationNo.name)
+        val row = listOf(yesButton, noButton)
+        return InlineKeyboardMarkup.createSingleRowKeyboard(row)
+    }
 }

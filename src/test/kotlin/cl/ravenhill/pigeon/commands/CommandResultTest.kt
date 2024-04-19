@@ -1,6 +1,6 @@
 package cl.ravenhill.pigeon.commands
 
-import cl.ravenhill.pigeon.arbs.arbUser
+import cl.ravenhill.pigeon.arbUser
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb

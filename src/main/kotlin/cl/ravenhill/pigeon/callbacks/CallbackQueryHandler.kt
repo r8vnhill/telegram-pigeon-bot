@@ -2,6 +2,7 @@ package cl.ravenhill.pigeon.callbacks
 
 import cl.ravenhill.pigeon.chat.ReadUser
 import com.github.kotlintelegrambot.Bot
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 /**
@@ -13,7 +14,7 @@ import org.slf4j.LoggerFactory
  *  The unique name of the callback query handler, used primarily for callback data in Telegram's inline keyboards.
  */
 sealed class CallbackQueryHandler {
-    protected val logger = LoggerFactory.getLogger(javaClass)
+    protected val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     abstract val name: String
 

@@ -56,4 +56,6 @@ data class IdleState(override val context: ReadWriteUser) : State {
         context.state = RevokeState(context)
         return TransitionSuccess
     }
+
+    override fun toString() = this::class.simpleName ?: "IdleState"
 }
