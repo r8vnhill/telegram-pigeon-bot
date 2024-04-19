@@ -52,36 +52,4 @@ class DatabaseService(private val jdbcUrl: String, private val driverName: Strin
         }
     }
 
-    fun addUser(user: ReadUser) {
-        transaction(database) {
-            Users.insert {
-                it[chatId] = user.userId
-                it[username] = user.username
-                it[state] = IdleState::class.simpleName!!
-            }
-        }
-    }
-
-    fun getUser(user: ReadUser): ReadUser? = transaction(database) {
-        val result = Users.selectAll().where { Users.id eq user.userId }
-        if (result.count() == 0L) {
-            null
-        } else {
-            PigeonUser.from(result.single())
-        }
-    }
-
-    fun deleteUser(user: ReadUser) {
-        transaction(database) {
-            Users.deleteWhere { id eq user.userId }
-        }
-    }
-
-    fun updateUser(copy: ReadUser) {
-        transaction(database) {
-            Users.update({ Users.id eq copy.userId }) {
-                it[username] = copy.username
-            }
-        }
-    }
 }

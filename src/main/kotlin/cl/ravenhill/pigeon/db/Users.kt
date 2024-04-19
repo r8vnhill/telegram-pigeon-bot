@@ -1,10 +1,19 @@
 package cl.ravenhill.pigeon.db
 
+import cl.ravenhill.pigeon.chat.PigeonUser
+import cl.ravenhill.pigeon.chat.ReadUser
 import cl.ravenhill.pigeon.db.Users.chatId
 import cl.ravenhill.pigeon.db.Users.username
+import cl.ravenhill.pigeon.states.IdleState
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IdTable
 import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 
 /**
  * Represents the `Users` table in the database, using the Exposed SQL framework. This object extends
@@ -51,5 +60,71 @@ object Users : IdTable<Long>() {
 
     // Custom primary key definition
     override val id: Column<EntityID<Long>> = chatId.entityId()
-    override val primaryKey = PrimaryKey(id, name = "PK_ChatId") // Explicitly naming the primary key for clarity
+}
+
+/**
+ * Deletes a user from the database. This function encapsulates the operation within a transaction,
+ * ensuring atomicity of the delete operation. The deletion is based on the user's ID.
+ *
+ * @param user
+ *  The `ReadUser` instance representing the user to be deleted. The user's ID is used to identify the correct record in
+ *  the database.
+ */
+fun DatabaseService.deleteUser(user: ReadUser) {
+    transaction(database) {
+        Users.deleteWhere { id eq user.userId }  // Perform the deletion in the database based on the user ID.
+    }
+}
+
+/**
+ * Updates a user's details in the database. This function encapsulates the update operation within a transaction,
+ * ensuring the integrity and atomicity of the operation. It specifically updates the username based on the user's ID.
+ *
+ * @param user
+ *  The `ReadUser` instance representing the new state of the user to be updated. The user's ID is used to locate the
+ *  existing record, and the provided details (e.g., username) are used to update the record.
+ */
+fun DatabaseService.updateUser(user: ReadUser) {
+    transaction(database) {
+        Users.update({ Users.id eq user.userId }) {
+            it[username] = user.username
+        }
+    }
+}
+
+/**
+ * Adds a new user to the database. This function performs the insertion within a transaction,
+ * ensuring that the operation is atomic. It inserts a new record with the user's ID, username,
+ * and state into the Users table.
+ *
+ * @param user
+ *  The `ReadUser` instance containing the details of the user to be added. The user's ID is used as the primary key,
+ *  the username as a descriptor, and the state is set to 'Idle' by default upon insertion.
+ */
+fun DatabaseService.addUser(user: ReadUser) {
+    transaction(database) {
+        Users.insert {
+            it[chatId] = user.userId  // Assigns the user's ID to the chatId column.
+            it[username] = user.username  // Sets the username field.
+            it[state] = IdleState::class.simpleName!!  // Initializes the state to 'Idle'.
+        }
+    }
+}
+
+/**
+ * Retrieves a user from the database based on their user ID. This function performs the retrieval within a transaction
+ * and returns the corresponding `ReadUser` instance if the user exists, or `null` if no such user is found.
+ *
+ * @param user
+ *  The `ReadUser` instance containing the ID of the user to retrieve. Only the `userId` is used in this function to
+ *  identify the user in the database.
+ * @return The `ReadUser` instance if found, or `null` if no user with the given ID exists.
+ */
+fun DatabaseService.getUser(user: ReadUser): ReadUser? = transaction(database) {
+    val result = Users.selectAll().where { Users.id eq user.userId }
+    if (result.count() == 0L) {
+        null
+    } else {
+        PigeonUser.from(result.single())
+    }
 }
