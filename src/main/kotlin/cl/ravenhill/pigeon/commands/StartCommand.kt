@@ -60,7 +60,7 @@ data class StartCommand(
             }
         } else {
             val welcomeFile = File("messages/welcome_message.md")
-            if (welcomeFile.exists() && user.state is IdleState) {
+            if (welcomeFile.exists()) {
                 sendWelcomeMessage(welcomeFile)
             } else {
                 CommandFailure(user, "Welcome message not found")

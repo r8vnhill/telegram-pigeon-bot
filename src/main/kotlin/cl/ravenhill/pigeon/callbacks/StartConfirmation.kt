@@ -1,15 +1,12 @@
 package cl.ravenhill.pigeon.callbacks
 
-import cl.ravenhill.pigeon.chat.ChatId
+import cl.ravenhill.pigeon.BotFailure
+import cl.ravenhill.pigeon.BotSuccess
+import cl.ravenhill.pigeon.bot.Bot
 import cl.ravenhill.pigeon.chat.ReadUser
 import cl.ravenhill.pigeon.db.DatabaseService
-import cl.ravenhill.pigeon.db.Users
+import cl.ravenhill.pigeon.db.addUser
 import cl.ravenhill.pigeon.db.getUser
-import cl.ravenhill.pigeon.states.IdleState
-import com.github.kotlintelegrambot.Bot
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.transaction
 
 /**
  * Defines a contract for handling start confirmation responses in the Telegram bot system. This sealed interface
@@ -31,20 +28,36 @@ sealed class StartConfirmation : CallbackQueryHandler()
 data object StartConfirmationYes : StartConfirmation() {
     override val name: String = this::class.simpleName!!
 
-    override fun invoke(user: ReadUser, bot: Bot, dbService: DatabaseService) {
-        transaction {
-            val queryResult = dbService.getUser(user)
-            if (queryResult == null) {
-                Users.insert {
-                    it[id] = user.userId
-                    it[username] = user.username
-                    it[state] = IdleState::class.simpleName!!
+    override fun invoke(user: ReadUser, bot: Bot, dbService: DatabaseService): CallbackResult {
+        val readUser = dbService.getUser(user)
+        if (readUser == null) {
+            logger.info("User ${user.username.ifBlank { user.userId.toString() }} is not registered")
+            dbService.addUser(user)
+            return when (
+                val result = bot.sendMessage(user, "Welcome to the bot!")
+            ) {
+                is BotFailure -> {
+                    logger.error("Failed to send welcome message to user ${user.username}")
+                    CallbackFailure(result.message)
                 }
-                bot.sendMessage(ChatId.fromId(user.userId), "Welcome to the bot!")
-                logger.info("User ${user.username.ifBlank { user.userId.toString() }} registered successfully")
-            } else {
-                logger.info("User ${user.username.ifBlank { user.userId.toString() }} is already registered")
-                bot.sendMessage(ChatId.fromId(user.userId), "You are already registered!")
+                is BotSuccess -> {
+                    logger.info("User ${user.username.ifBlank { user.userId.toString() }} registered successfully")
+                    CallbackSuccess("User registered successfully")
+                }
+            }
+        } else {
+            logger.info("User ${user.username.ifBlank { user.userId.toString() }} is already registered")
+            return when (
+                val result = bot.sendMessage(user, "You are already registered!")
+            ) {
+                is BotFailure -> {
+                    logger.error("Failed to send message to user ${user.username}")
+                    CallbackFailure(result.message)
+                }
+                is BotSuccess -> {
+                    logger.info("User ${user.username.ifBlank { user.userId.toString() }} is already registered")
+                    CallbackSuccess("User is already registered")
+                }
             }
         }
     }
@@ -56,10 +69,23 @@ data object StartConfirmationYes : StartConfirmation() {
  */
 data object StartConfirmationNo : StartConfirmation() {
     override val name: String = "no_start"
-    override fun invoke(user: ReadUser, bot: Bot, dbService: DatabaseService) {
+    override fun invoke(user: ReadUser, bot: Bot, dbService: DatabaseService): CallbackResult {
         logger.info("User ${user.username.ifBlank { user.userId.toString() }} chose not to register")
-        bot.sendMessage(
-            ChatId.fromId(user.userId), "You have chosen not to register. Remember you can always register later!"
-        )
+        return when (
+            val result = bot.sendMessage(
+                user,
+                "You have chosen not to register. Remember you can always register later!"
+            )
+        ) {
+            is BotFailure -> {
+                logger.error("Failed to send message to user ${user.username}")
+                CallbackFailure(result.message)
+            }
+
+            is BotSuccess -> {
+                logger.info("User ${user.username.ifBlank { user.userId.toString() }} chose not to register")
+                CallbackSuccess("User chose not to register")
+            }
+        }
     }
 }

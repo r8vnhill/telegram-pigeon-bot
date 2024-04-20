@@ -1,8 +1,8 @@
 package cl.ravenhill.pigeon.callbacks
 
+import cl.ravenhill.pigeon.bot.Bot
 import cl.ravenhill.pigeon.chat.ReadUser
 import cl.ravenhill.pigeon.db.DatabaseService
-import com.github.kotlintelegrambot.Bot
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -29,5 +29,5 @@ sealed class CallbackQueryHandler {
      * @param bot
      *  The bot instance used to send messages and perform actions in response to the callback query.
      */
-    abstract operator fun invoke(user: ReadUser, bot: Bot, dbService: DatabaseService)
+    abstract operator fun invoke(user: ReadUser, bot: Bot, dbService: DatabaseService): CallbackResult
 }

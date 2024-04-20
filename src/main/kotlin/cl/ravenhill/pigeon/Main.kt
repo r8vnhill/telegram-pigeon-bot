@@ -90,30 +90,32 @@ fun registerCommands(databaseService: DatabaseService) {
     dispatch {
         callbackQuery(StartConfirmationYes.name) {
             val user = PigeonUser.from(callbackQuery.from)
-            StartConfirmationYes.invoke(user, bot, databaseService)
+            StartConfirmationYes.invoke(user, PigeonBot(bot), databaseService)
         }
 
         callbackQuery(StartConfirmationNo.name) {
             val user = PigeonUser.from(callbackQuery.from)
-            StartConfirmationNo.invoke(user, bot, databaseService)
+            StartConfirmationNo.invoke(user, PigeonBot(bot), databaseService)
         }
 
         callbackQuery(RevokeConfirmationYes.name) {
             val user = transaction {
                 PigeonUser.from(Users.selectAll().where { Users.id eq callbackQuery.from.id }.single())
             }
-            RevokeConfirmationYes.invoke(user, bot, databaseService)
+            RevokeConfirmationYes.invoke(user, PigeonBot(bot), databaseService)
         }
 
         callbackQuery(RevokeConfirmationNo.name) {
             val user = transaction {
                 PigeonUser.from(Users.selectAll().where { Users.id eq callbackQuery.from.id }.single())
             }
-            RevokeConfirmationNo.invoke(user, bot, databaseService)
+            RevokeConfirmationNo.invoke(user, PigeonBot(bot), databaseService)
         }
 
         command(StartCommand.NAME) {
-            when (val result = StartCommand(PigeonUser.from(message.from!!), PigeonBot(bot), databaseService).execute()) {
+            when (
+                val result = StartCommand(PigeonUser.from(message.from!!), PigeonBot(bot), databaseService).execute()
+            ) {
                 is CommandSuccess -> logger.info("Start command executed successfully: $result")
                 is CommandFailure -> logger.error("Start command failed: $result")
             }

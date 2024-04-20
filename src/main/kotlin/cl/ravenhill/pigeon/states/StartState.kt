@@ -3,7 +3,6 @@ package cl.ravenhill.pigeon.states
 import cl.ravenhill.pigeon.BotResult
 import cl.ravenhill.pigeon.chat.ReadWriteUser
 import cl.ravenhill.pigeon.db.Users
-import cl.ravenhill.pigeon.sendMessage
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -72,4 +71,6 @@ data class StartState(override val context: ReadWriteUser) : State {
             verifyUserDeletion(it, context)
         }
     }
+
+    override fun toString() = this::class.simpleName!!
 }

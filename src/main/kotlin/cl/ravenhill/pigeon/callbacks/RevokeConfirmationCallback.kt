@@ -1,10 +1,12 @@
 package cl.ravenhill.pigeon.callbacks
 
+import cl.ravenhill.pigeon.BotFailure
+import cl.ravenhill.pigeon.BotSuccess
+import cl.ravenhill.pigeon.bot.Bot
+import cl.ravenhill.pigeon.callbacks.RevokeConfirmationYes.name
 import cl.ravenhill.pigeon.chat.ReadUser
 import cl.ravenhill.pigeon.db.DatabaseService
 import cl.ravenhill.pigeon.db.Users
-import cl.ravenhill.pigeon.sendMessage
-import com.github.kotlintelegrambot.Bot
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -24,21 +26,37 @@ sealed class RevokeConfirmationCallback : CallbackQueryHandler()
 data object RevokeConfirmationYes : RevokeConfirmationCallback() {
     override val name: String = this::class.simpleName!!
 
-    override fun invoke(user: ReadUser, bot: Bot, dbService: DatabaseService) {
-        transaction() {
+    override fun invoke(user: ReadUser, bot: Bot, dbService: DatabaseService) = transaction {
             Users.deleteWhere { id eq user.userId }
             logger.info("User ${user.username} has been revoked.")
-            sendMessage(bot, "Your registration has been revoked.", user)
+            when (val result = bot.sendMessage(user, "Your registration has been revoked.")) {
+                is BotFailure -> {
+                    logger.error("Failed to send revocation message to user ${user.username}")
+                    CallbackFailure(result.message)
+                }
+                is BotSuccess -> {
+                    logger.info("User ${user.username} has been revoked.")
+                    CallbackSuccess("Your registration has been revoked.")
+                }
+            }
         }
-    }
 }
 
 
-data object RevokeConfirmationNo : RevokeConfirmationCallback (){
+data object RevokeConfirmationNo : RevokeConfirmationCallback() {
     override val name: String = this::class.simpleName!!
 
-    override fun invoke(user: ReadUser, bot: Bot, dbService: DatabaseService) {
+    override fun invoke(user: ReadUser, bot: Bot, dbService: DatabaseService): CallbackResult {
         logger.info("User ${user.username} has chosen not to revoke.")
-        sendMessage(bot, "Your registration has not been revoked.", user)
+        return when (val result = bot.sendMessage(user, "Your registration has not been revoked.")) {
+            is BotFailure -> {
+                logger.error("Failed to send revocation rejection message to user ${user.username}")
+                CallbackFailure(result.message)
+            }
+            is BotSuccess -> {
+                logger.info("User ${user.username} has chosen not to revoke.")
+                CallbackSuccess("Your registration has not been revoked.")
+            }
+        }
     }
 }
