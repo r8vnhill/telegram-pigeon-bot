@@ -4,7 +4,6 @@ import cl.ravenhill.pigeon.BotResult
 import cl.ravenhill.pigeon.chat.ReadWriteUser
 import cl.ravenhill.pigeon.db.Users
 import cl.ravenhill.pigeon.sendMessage
-import com.github.kotlintelegrambot.Bot
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -45,7 +44,7 @@ data class StartState(override val context: ReadWriteUser) : State {
      * @return A `BotResult` indicating the outcome of the processing, including any state transitions or
      * necessary messages sent to the user.
      */
-    override fun process(text: String?, bot: Bot): BotResult {
+    override fun process(text: String?, bot: cl.ravenhill.pigeon.bot.Bot): BotResult {
         super.process(text, bot)
         val cleanText = text?.uppercase() ?: "INVALID"
         return when (cleanText) {
@@ -55,19 +54,19 @@ data class StartState(override val context: ReadWriteUser) : State {
         }
     }
 
-    private fun handleConfirmation(bot: Bot): BotResult = transaction {
+    private fun handleConfirmation(bot: cl.ravenhill.pigeon.bot.Bot): BotResult = transaction {
         logger.info("User ${context.username.ifBlank { context.userId.toString() }} confirmed start")
         val message = "You were successfully registered!"
-        sendMessage(bot, message, context).also {
+        bot.sendMessage(context, message).also {
             context.onIdle(bot)
             verifyUserState(it, IdleState::class.simpleName!!, context)
         }
     }
 
-    private fun handleRejection(bot: Bot): BotResult = transaction {
+    private fun handleRejection(bot: cl.ravenhill.pigeon.bot.Bot): BotResult = transaction {
         logger.info("User ${context.username.ifBlank { context.userId.toString() }} denied start")
         val message = "You were not registered."
-        sendMessage(bot, message, context).also {
+        bot.sendMessage(context, message).also {
             Users.deleteWhere { id eq context.userId }
             context.onIdle(bot)
             verifyUserDeletion(it, context)

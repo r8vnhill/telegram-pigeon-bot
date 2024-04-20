@@ -8,7 +8,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.checkAll
-import org.junit.platform.commons.logging.LoggerFactory
 
 class StartStateTest : FreeSpec({
 

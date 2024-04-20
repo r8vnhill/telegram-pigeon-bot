@@ -1,6 +1,7 @@
 package cl.ravenhill.pigeon.callbacks
 
 import cl.ravenhill.pigeon.chat.ReadUser
+import cl.ravenhill.pigeon.db.DatabaseService
 import cl.ravenhill.pigeon.db.Users
 import cl.ravenhill.pigeon.sendMessage
 import com.github.kotlintelegrambot.Bot
@@ -23,7 +24,7 @@ sealed class RevokeConfirmationCallback : CallbackQueryHandler()
 data object RevokeConfirmationYes : RevokeConfirmationCallback() {
     override val name: String = this::class.simpleName!!
 
-    override fun invoke(user: ReadUser, bot: Bot) {
+    override fun invoke(user: ReadUser, bot: Bot, dbService: DatabaseService) {
         transaction() {
             Users.deleteWhere { id eq user.userId }
             logger.info("User ${user.username} has been revoked.")
@@ -36,7 +37,7 @@ data object RevokeConfirmationYes : RevokeConfirmationCallback() {
 data object RevokeConfirmationNo : RevokeConfirmationCallback (){
     override val name: String = this::class.simpleName!!
 
-    override fun invoke(user: ReadUser, bot: Bot) {
+    override fun invoke(user: ReadUser, bot: Bot, dbService: DatabaseService) {
         logger.info("User ${user.username} has chosen not to revoke.")
         sendMessage(bot, "Your registration has not been revoked.", user)
     }

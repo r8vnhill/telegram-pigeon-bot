@@ -3,14 +3,16 @@ package cl.ravenhill.pigeon
 import cl.ravenhill.jakt.Jakt.constraints
 import cl.ravenhill.jakt.constraints.longs.BeEqualTo
 import cl.ravenhill.jakt.exceptions.CompositeException
+import cl.ravenhill.pigeon.bot.PigeonBot
 import cl.ravenhill.pigeon.callbacks.RevokeConfirmationNo
 import cl.ravenhill.pigeon.callbacks.RevokeConfirmationYes
 import cl.ravenhill.pigeon.callbacks.StartConfirmationNo
 import cl.ravenhill.pigeon.callbacks.StartConfirmationYes
 import cl.ravenhill.pigeon.chat.PigeonUser
+import cl.ravenhill.pigeon.commands.CommandFailure
+import cl.ravenhill.pigeon.commands.CommandSuccess
 import cl.ravenhill.pigeon.commands.RevokeCommand
 import cl.ravenhill.pigeon.commands.StartCommand
-import cl.ravenhill.pigeon.db.Admins
 import cl.ravenhill.pigeon.db.DatabaseService
 import cl.ravenhill.pigeon.db.Meta
 import cl.ravenhill.pigeon.db.Users
@@ -19,12 +21,11 @@ import com.github.kotlintelegrambot.bot
 import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.dispatcher.callbackQuery
 import com.github.kotlintelegrambot.dispatcher.command
-import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 import kotlin.time.ExperimentalTime
-import kotlin.time.measureTime
+import kotlin.time.TimedValue
 import kotlin.time.measureTimedValue
 
 private val logger = LoggerFactory.getLogger("Main")
@@ -33,12 +34,13 @@ private const val JDBC_DRIVER = "org.h2.Driver"
 
 @OptIn(ExperimentalTime::class)
 fun main() {
-    initDatabase()
+    val (databaseService, databaseInitTime) = initDatabase()
+    logger.info("Database initialized in $databaseInitTime")
     logger.info("Setting up bot")
     val (bot, botStartupTime) = measureTimedValue {
         bot {
-            token = queryApiKey()
-            registerCommands()
+            token = queryApiKey(databaseService)
+            registerCommands(databaseService)
         }
     }
     logger.info("Bot setup in $botStartupTime")
@@ -57,17 +59,12 @@ fun main() {
  * ## Usage:
  * This function should be called at the start of the application lifecycle to set up the database before any operations
  * that require database access are performed.
- *
- * @receiver None Explicit receiver is not defined, assuming function is enclosed within a class with access to a logger.
  */
 @OptIn(ExperimentalTime::class)
-private fun initDatabase() {
+private fun initDatabase(): TimedValue<DatabaseService> {
     logger.info("Initializing database")
-    measureTime {
+    return measureTimedValue {
         DatabaseService(JDBC_URL, JDBC_DRIVER).init()
-        transaction { SchemaUtils.create(Meta, Users, Admins) } // Creates tables in the database
-    }.also { timeTaken ->
-        logger.info("Database initialized in $timeTaken")
     }
 }
 
@@ -80,9 +77,8 @@ private fun initDatabase() {
  * @return Returns the string value of the API key if found and valid.
  * @throws CompositeException If the constraint for the presence of "API_KEY" is not met.
  */
-private fun queryApiKey(): String = transaction {
-    val result = Meta.selectAll()
-        .where { Meta.key eq "API_KEY" }
+private fun queryApiKey(databaseService: DatabaseService): String = transaction(databaseService.database) {
+    val result = Meta.selectAll().where { Meta.key eq "API_KEY" }
     constraints {
         "API_KEY must be present in meta table" { result.count() must BeEqualTo(1L) }
     }
@@ -90,38 +86,45 @@ private fun queryApiKey(): String = transaction {
 }
 
 context(Bot.Builder)
-fun registerCommands() {
+fun registerCommands(databaseService: DatabaseService) {
     dispatch {
         callbackQuery(StartConfirmationYes.name) {
             val user = PigeonUser.from(callbackQuery.from)
-            StartConfirmationYes(user, bot)
+            StartConfirmationYes.invoke(user, bot, databaseService)
         }
 
         callbackQuery(StartConfirmationNo.name) {
             val user = PigeonUser.from(callbackQuery.from)
-            StartConfirmationNo(user, bot)
+            StartConfirmationNo.invoke(user, bot, databaseService)
         }
 
         callbackQuery(RevokeConfirmationYes.name) {
             val user = transaction {
                 PigeonUser.from(Users.selectAll().where { Users.id eq callbackQuery.from.id }.single())
             }
-            RevokeConfirmationYes(user, bot)
+            RevokeConfirmationYes.invoke(user, bot, databaseService)
         }
 
         callbackQuery(RevokeConfirmationNo.name) {
             val user = transaction {
                 PigeonUser.from(Users.selectAll().where { Users.id eq callbackQuery.from.id }.single())
             }
-            RevokeConfirmationNo(user, bot)
+            RevokeConfirmationNo.invoke(user, bot, databaseService)
         }
 
-        command("start") {
-            StartCommand(user = PigeonUser.from(message.from!!), bot = bot).execute()
+        command(StartCommand.NAME) {
+            when (val result = StartCommand(PigeonUser.from(message.from!!), PigeonBot(bot), databaseService).execute()) {
+                is CommandSuccess -> logger.info("Start command executed successfully: $result")
+                is CommandFailure -> logger.error("Start command failed: $result")
+            }
         }
 
         command("revoke") {
-            RevokeCommand(user = PigeonUser.from(message.from!!), bot = bot).execute()
+            RevokeCommand(
+                user = PigeonUser.from(message.from!!),
+                bot = PigeonBot(bot),
+                databaseService = databaseService
+            ).execute()
         }
 
         command("addChat") {

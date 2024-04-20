@@ -1,16 +1,8 @@
 package cl.ravenhill.pigeon.db
 
-import cl.ravenhill.pigeon.chat.PigeonUser
-import cl.ravenhill.pigeon.chat.ReadUser
-import cl.ravenhill.pigeon.states.IdleState
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
 
 /**
  * Manages the database connection for an application. This class encapsulates the details required to
@@ -45,11 +37,11 @@ class DatabaseService(private val jdbcUrl: String, private val driverName: Strin
      *
      * @throws IllegalStateException if the database connection fails or the parameters are incorrect.
      */
-    fun init() {
+    fun init(): DatabaseService {
         database = Database.connect(jdbcUrl, driverName)
         transaction(database) {
             SchemaUtils.create(Meta, Users, Admins)
         }
+        return this
     }
-
 }

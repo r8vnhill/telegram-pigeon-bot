@@ -6,7 +6,6 @@ import cl.ravenhill.pigeon.BotSuccess
 import cl.ravenhill.pigeon.chat.ReadUser
 import cl.ravenhill.pigeon.db.Users
 import cl.ravenhill.pigeon.sendMessage
-import com.github.kotlintelegrambot.Bot
 import org.jetbrains.exposed.sql.selectAll
 import org.slf4j.LoggerFactory
 
@@ -91,8 +90,8 @@ fun verifyUserState(result: BotResult, expectedState: String, user: ReadUser): B
 }
 
 
-fun handleInvalidInput(bot: Bot, context: ReadUser): BotResult {
+fun handleInvalidInput(bot: cl.ravenhill.pigeon.bot.Bot, context: ReadUser): BotResult {
     logger.warn("Invalid input from user ${context.username.ifBlank { context.userId.toString() }}")
     val message = "Invalid input. Please type 'yes' or 'no' to confirm or deny registration."
-    return sendMessage(bot, message, context)
+    return bot.sendMessage(context, message)
 }

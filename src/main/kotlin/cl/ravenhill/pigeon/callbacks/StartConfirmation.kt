@@ -2,7 +2,9 @@ package cl.ravenhill.pigeon.callbacks
 
 import cl.ravenhill.pigeon.chat.ChatId
 import cl.ravenhill.pigeon.chat.ReadUser
+import cl.ravenhill.pigeon.db.DatabaseService
 import cl.ravenhill.pigeon.db.Users
+import cl.ravenhill.pigeon.db.getUser
 import cl.ravenhill.pigeon.states.IdleState
 import com.github.kotlintelegrambot.Bot
 import org.jetbrains.exposed.sql.insert
@@ -27,15 +29,12 @@ sealed class StartConfirmation : CallbackQueryHandler()
  * this object registers them and sends a welcoming message. If already registered, it informs them accordingly.
  */
 data object StartConfirmationYes : StartConfirmation() {
-    override val name: String = "yes_start"
+    override val name: String = this::class.simpleName!!
 
-    override fun invoke(user: ReadUser, bot: Bot) {
+    override fun invoke(user: ReadUser, bot: Bot, dbService: DatabaseService) {
         transaction {
-            val queryResult = Users.selectAll().where { Users.id eq user.userId }
-            if (queryResult.count() > 0) {
-                logger.info("User ${user.username.ifBlank { user.userId.toString() }} is already registered")
-                bot.sendMessage(ChatId.fromId(user.userId), "You are already registered!")
-            } else {
+            val queryResult = dbService.getUser(user)
+            if (queryResult == null) {
                 Users.insert {
                     it[id] = user.userId
                     it[username] = user.username
@@ -43,6 +42,9 @@ data object StartConfirmationYes : StartConfirmation() {
                 }
                 bot.sendMessage(ChatId.fromId(user.userId), "Welcome to the bot!")
                 logger.info("User ${user.username.ifBlank { user.userId.toString() }} registered successfully")
+            } else {
+                logger.info("User ${user.username.ifBlank { user.userId.toString() }} is already registered")
+                bot.sendMessage(ChatId.fromId(user.userId), "You are already registered!")
             }
         }
     }
@@ -54,7 +56,7 @@ data object StartConfirmationYes : StartConfirmation() {
  */
 data object StartConfirmationNo : StartConfirmation() {
     override val name: String = "no_start"
-    override fun invoke(user: ReadUser, bot: Bot) {
+    override fun invoke(user: ReadUser, bot: Bot, dbService: DatabaseService) {
         logger.info("User ${user.username.ifBlank { user.userId.toString() }} chose not to register")
         bot.sendMessage(
             ChatId.fromId(user.userId), "You have chosen not to register. Remember you can always register later!"

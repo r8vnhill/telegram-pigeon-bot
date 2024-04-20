@@ -1,13 +1,12 @@
 package cl.ravenhill.pigeon.chat
 
+import cl.ravenhill.pigeon.bot.Bot
+import cl.ravenhill.pigeon.bot.PigeonBot
 import cl.ravenhill.pigeon.db.Users
 import cl.ravenhill.pigeon.states.IdleState
 import cl.ravenhill.pigeon.states.RevokeState
-import cl.ravenhill.pigeon.states.StartState
 import cl.ravenhill.pigeon.states.State
 import cl.ravenhill.pigeon.states.TransitionResult
-import com.github.kotlintelegrambot.Bot
-import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import com.github.kotlintelegrambot.entities.User as TelegramUser
@@ -73,7 +72,7 @@ interface ReadUser {
         return state.onIdle(bot)
     }
 
-    fun onRevoke(bot: Bot): TransitionResult {
+    fun onRevoke(bot: PigeonBot): TransitionResult {
         transaction {
             Users.update({ Users.id eq userId }) {
                 it[state] = RevokeState::class.simpleName!!
